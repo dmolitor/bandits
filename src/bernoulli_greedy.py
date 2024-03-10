@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
+from pathlib import Path
 import plotnine as pn
-import random
 from typing import List
 from tqdm import tqdm
 
 generator = np.random.default_rng(seed=123)
+base_dir = Path(__file__).resolve().parent.parent
 
 class BernoulliBandit:
     def __init__(self, means: List[float]):
@@ -71,6 +72,7 @@ pseudo_regret_plot = (
     pn.ggplot(pseudo_regret_df, pn.aes(x="pseudo_regret"))
     + pn.geom_histogram(bins=10, binwidth=1)
 )
+pn.ggsave(pseudo_regret_plot, filename=base_dir/"figures"/"4_11.png")
 
 # 2) Same Bernoulli bandit as in 1). Run 1000 simulations for horizon
 #    in {100, 200, 300, ..., 1000}.
@@ -103,3 +105,4 @@ horizon_plot = (
     + pn.geom_errorbar(width=0.25)
     + pn.theme_bw()
 )
+pn.ggsave(horizon_plot, filename=base_dir/"figures"/"4_12.png")
