@@ -112,7 +112,7 @@ if __name__ == "__main__":
         pn.ggplot(data = regret_df)
         + pn.geom_line(pn.aes(x="delta", y="value", linetype="type"))
         + pn.labs(x="delta", y="Expected regret", linetype="")
-        + pn.theme_light()
+        + pn.theme_538()
     )
     pn.ggsave(
         regret_plot,
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         pn.ggplot(data = regret_df)
         + pn.geom_line(pn.aes(x="m", y="regret_cumulative"))
         + pn.labs(y="Expected regret")
-        + pn.theme_light()
+        + pn.theme_538()
     )
     pn.ggsave(
         regret_plot,
@@ -163,7 +163,7 @@ if __name__ == "__main__":
         pn.ggplot(data = regret_df)
         + pn.geom_line(pn.aes(x="m", y="regret_sd"))
         + pn.labs(y="Standard deviation of the regret")
-        + pn.theme_light()
+        + pn.theme_538()
     )
     pn.ggsave(
         regret_sd_plot,

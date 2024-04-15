@@ -73,6 +73,7 @@ if __name__ == "__main__":
     pseudo_regret_plot = (
         pn.ggplot(pseudo_regret_df, pn.aes(x="pseudo_regret"))
         + pn.geom_histogram(bins=10, binwidth=1)
+        + pn.theme_538()
     )
     pn.ggsave(
         pseudo_regret_plot,
@@ -111,7 +112,7 @@ if __name__ == "__main__":
         )
         + pn.geom_line()
         + pn.geom_errorbar(width=0.25)
-        + pn.theme_bw()
+        + pn.theme_538()
     )
     pn.ggsave(
         horizon_plot,
