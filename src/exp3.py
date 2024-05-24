@@ -36,7 +36,7 @@ class AdversarialExp3:
                 for x in self.s_hat
             ]
             a_t = np.argmax(generator.multinomial(1, p_t))
-            reward = self.rewards[a_t]
+            reward = generator.binomial(1, self.rewards[a_t])
             self.realizations.append(reward)
             for idx in range(self.k):
                 self.probabilities[idx].append(p_t[idx])
@@ -53,7 +53,7 @@ class AdversarialExp3:
 # Exercises
 if __name__ == "__main__":
 
-    # 11.9
+    # 11.9 Stochastic Bernoulli Bandit with Exp3
     # Plot loose regret as a function of learning rate with fixed horizon T=1e4.
     # Average loose regret across 100 replications at each eta value.
     regret_dict = {"eta": [], "regret": []}
