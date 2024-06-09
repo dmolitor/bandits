@@ -1,3 +1,4 @@
+mpire>=2.10.2
 numpy>=1.26.0
 pandas
 plotnine>=0.12.0
