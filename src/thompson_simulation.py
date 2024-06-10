@@ -171,7 +171,7 @@ if __name__ == "__main__":
             )
         )
         + pn.geom_line()
-        + pn.facet_wrap("~ warmup_label", nrow=3, scales="fixed")
+        + pn.facet_wrap("~ warmup_label", nrow=3, scales="free")
         + pn.labs(
             x="Optimality gap",
             y="Mean expected regret",
