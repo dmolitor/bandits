@@ -162,7 +162,7 @@ class LinUCB:
         self.arms_index = arms_index
         self.selected_arms = np.empty(0)
         self.rewards = np.empty(0)
-    
+
     def _activate_arm(self, index_val: str) -> None:
         """Mark an existing bandit arm as active"""
         self.arms["active"][self.arms[self.arms_index] == index_val] = True
@@ -190,16 +190,13 @@ class LinUCB:
         """Get an arm features as an array"""
         features = self.arms[self.arms[self.arms_index] == index_val]
         features = npr.drop_fields(
-            features,
-            [self.arms_index, "active"],
-            usemask=False, 
-            asrecarray=True
+            features, [self.arms_index, "active"], usemask=False, asrecarray=True
         )
         assert (
             len(features) == 1
         ), f"Exactly one arm was expected but {len(features)} {'were' if len(features) != 1 else 'was'} found"
         return features[0]
-    
+
     def _inactive_arms(self) -> npt.NDArray[np.record]:
         """An array of arms that are currently inactive"""
         return self.arms[~self.arms["active"]]
@@ -229,20 +226,13 @@ class LinUCBDisjoint(LinUCB):
             ("b", "O"),
             ("context", "O"),
             ("ub", "f8"),
-            ("is_new", "bool")
+            ("is_new", "bool"),
         ]
         params_array = np.array(np.empty(0), dtype=params_dtype)
         for key in self.arms[self.arms_index]:
             new_params = np.array(
-                [(
-                    key,
-                    np.empty((0, 0)),
-                    np.empty((0, 0)),
-                    np.empty(0),
-                    np.nan,
-                    True
-                )],
-                dtype=params_dtype
+                [(key, np.empty((0, 0)), np.empty((0, 0)), np.empty(0), np.nan, True)],
+                dtype=params_dtype,
             )
             params_array = np.append(params_array, new_params)
         self._arm_parameters = params_array
@@ -257,19 +247,12 @@ class LinUCBDisjoint(LinUCB):
             ("b", "O"),
             ("context", "O"),
             ("ub", "f8"),
-            ("is_new", "bool")
+            ("is_new", "bool"),
         ]
         new_key = arm[self.arms_index]
         new_params = np.array(
-            [(
-                new_key,
-                np.empty((0, 0)),
-                np.empty((0, 0)),
-                np.empty(0),
-                np.nan,
-                True
-            )],
-            dtype=params_dtype
+            [(new_key, np.empty((0, 0)), np.empty((0, 0)), np.empty(0), np.nan, True)],
+            dtype=params_dtype,
         )
         self._arm_parameters = np.append(self._arm_parameters, new_params)
 
@@ -287,12 +270,9 @@ class LinUCBDisjoint(LinUCB):
 
     def _init_feature_dtype(self, user_features: np.record) -> None:
         if self._feature_dtype is None:
-            arm_dtype = (
-                npr
-                .drop_fields(self.arms, [self.arms_index, "active"], usemask=False)
-                .dtype
-                .descr
-            )
+            arm_dtype = npr.drop_fields(
+                self.arms, [self.arms_index, "active"], usemask=False
+            ).dtype.descr
             user_dtype = user_features.dtype.descr
             self._feature_dtype = arm_dtype + user_dtype
 
@@ -304,7 +284,12 @@ class LinUCBDisjoint(LinUCB):
             arm["is_new"] = False
         self._arm_parameters[self._arm_parameters["is_new"]] = new_arms
 
-    def pull(self, user_features: np.record, reward: Callable[[Any], float], logging_index_val: Any | None = None) -> Any:
+    def pull(
+        self,
+        user_features: np.record,
+        reward: Callable[[Any], float],
+        logging_index_val: Any | None = None,
+    ) -> Any:
         """Run one iteration of the algorithm"""
 
         # Estimate parameters and upper confidence bounds for each active arm
@@ -322,8 +307,12 @@ class LinUCBDisjoint(LinUCB):
             self._init_arm_parameters()
 
             # Pre-calculate inverses and such
-            parameters = self._arm_parameters[self._arm_parameters[self.arms_index] == arm_index]
-            assert len(parameters) == 1, f"More than one set of parameters found for Arm {arm_index}"
+            parameters = self._arm_parameters[
+                self._arm_parameters[self.arms_index] == arm_index
+            ]
+            assert (
+                len(parameters) == 1
+            ), f"More than one set of parameters found for Arm {arm_index}"
             for parameter in parameters:
                 A = parameter["A"]
                 A_inv = np.linalg.inv(A)
@@ -342,8 +331,10 @@ class LinUCBDisjoint(LinUCB):
             for parameter in parameters:
                 parameter["context"] = x
                 parameter["ub"] = ub
-            self._arm_parameters[self._arm_parameters[self.arms_index] == arm_index] = parameters
-        
+            self._arm_parameters[self._arm_parameters[self.arms_index] == arm_index] = (
+                parameters
+            )
+
         # Select the arm with the highest upper bound (ties broken randomly)
         ubs = self._arm_parameters["ub"]
         optimal_arm: int = np.random.choice(np.flatnonzero(ubs == ubs.max()))
@@ -352,20 +343,25 @@ class LinUCBDisjoint(LinUCB):
         # Return without updating parameters (effectively do not append records to history)
         if logging_index_val is not None and optimal_arm_index != logging_index_val:
             return optimal_arm_index
-        
+
         # Observe reward
         r = reward(optimal_arm_index)
 
         # Update parameters for selected arm
-        parameters = self._arm_parameters[self._arm_parameters[self.arms_index] == optimal_arm_index]
-        assert len(parameters) == 1, f"More than one set of parameters found for Arm {optimal_arm_index}"
+        parameters = self._arm_parameters[
+            self._arm_parameters[self.arms_index] == optimal_arm_index
+        ]
+        assert (
+            len(parameters) == 1
+        ), f"More than one set of parameters found for Arm {optimal_arm_index}"
         for parameter in parameters:
-            parameter["A"] = (
-                parameter["A"]
-                + np.matmul(parameter["context"], np.transpose(parameter["context"]))
+            parameter["A"] = parameter["A"] + np.matmul(
+                parameter["context"], np.transpose(parameter["context"])
             )
-            parameter["b"] = parameter["b"] + r*parameter["context"]
-        self._arm_parameters[self._arm_parameters[self.arms_index] == optimal_arm_index] = parameters
+            parameter["b"] = parameter["b"] + r * parameter["context"]
+        self._arm_parameters[
+            self._arm_parameters[self.arms_index] == optimal_arm_index
+        ] = parameters
 
         # Update reward and selected arms
         self.selected_arms = np.append(self.selected_arms, optimal_arm_index)
@@ -389,20 +385,13 @@ class LinUCBHybrid(LinUCB):
             ("b", "O"),
             ("context", "O"),
             ("ub", "f8"),
-            ("is_new", "bool")
+            ("is_new", "bool"),
         ]
         params_array = np.array(np.empty(0), dtype=params_dtype)
         for key in self.arms[self.arms_index]:
             new_params = np.array(
-                [(
-                    key,
-                    np.empty((0, 0)),
-                    np.empty((0, 0)),
-                    np.empty(0),
-                    np.nan,
-                    True
-                )],
-                dtype=params_dtype
+                [(key, np.empty((0, 0)), np.empty((0, 0)), np.empty(0), np.nan, True)],
+                dtype=params_dtype,
             )
             params_array = np.append(params_array, new_params)
         self._arm_parameters = params_array
@@ -419,19 +408,12 @@ class LinUCBHybrid(LinUCB):
             ("b", "O"),
             ("context", "O"),
             ("ub", "f8"),
-            ("is_new", "bool")
+            ("is_new", "bool"),
         ]
         new_key = arm[self.arms_index]
         new_params = np.array(
-            [(
-                new_key,
-                np.empty((0, 0)),
-                np.empty((0, 0)),
-                np.empty(0),
-                np.nan,
-                True
-            )],
-            dtype=params_dtype
+            [(new_key, np.empty((0, 0)), np.empty((0, 0)), np.empty(0), np.nan, True)],
+            dtype=params_dtype,
         )
         self._arm_parameters = np.append(self._arm_parameters, new_params)
 
@@ -446,19 +428,16 @@ class LinUCBHybrid(LinUCB):
     def _init_d(self, user_features: np.record) -> None:
         if self._d is None:
             self._d = len(user_features)
-    
+
     def _init_k(self, shared_features: np.record) -> None:
         if self._k is None:
             self._k = len(shared_features)
 
     def _init_feature_dtype(self, user_features: np.record) -> None:
         if self._feature_dtype is None:
-            arm_dtype = (
-                npr
-                .drop_fields(self.arms, [self.arms_index, "active"], usemask=False)
-                .dtype
-                .descr
-            )
+            arm_dtype = npr.drop_fields(
+                self.arms, [self.arms_index, "active"], usemask=False
+            ).dtype.descr
             user_dtype = user_features.dtype.descr
             self._feature_dtype = arm_dtype + user_dtype
 
@@ -475,7 +454,7 @@ class LinUCBHybrid(LinUCB):
         user_features: np.record,
         shared_features: List[str],
         reward: Callable[[Any], float],
-        logging_index_val: Any | None = None
+        logging_index_val: Any | None = None,
     ) -> Any:
         """Run one iteration of the algorithm"""
 
@@ -492,15 +471,21 @@ class LinUCBHybrid(LinUCB):
             # Split out disjoint and shared features
             ## TODO keep working on this!
             shared_features = context[shared_features]
-            disjoint_features = npr.drop_fields(context, shared_features, usemask=False, asrecarray=True)
+            disjoint_features = npr.drop_fields(
+                context, shared_features, usemask=False, asrecarray=True
+            )
 
             # Ensure dimension and arm design matrices are initiated
             self._init_d(context)
             self._init_arm_parameters()
 
             # Pre-calculate inverses and such
-            parameters = self._arm_parameters[self._arm_parameters[self.arms_index] == arm_index]
-            assert len(parameters) == 1, f"More than one set of parameters found for Arm {arm_index}"
+            parameters = self._arm_parameters[
+                self._arm_parameters[self.arms_index] == arm_index
+            ]
+            assert (
+                len(parameters) == 1
+            ), f"More than one set of parameters found for Arm {arm_index}"
             for parameter in parameters:
                 A = parameter["A"]
                 A_inv = np.linalg.inv(A)
@@ -519,8 +504,10 @@ class LinUCBHybrid(LinUCB):
             for parameter in parameters:
                 parameter["context"] = x
                 parameter["ub"] = ub
-            self._arm_parameters[self._arm_parameters[self.arms_index] == arm_index] = parameters
-        
+            self._arm_parameters[self._arm_parameters[self.arms_index] == arm_index] = (
+                parameters
+            )
+
         # Select the arm with the highest upper bound (ties broken randomly)
         ubs = self._arm_parameters["ub"]
         optimal_arm: int = np.random.choice(np.flatnonzero(ubs == ubs.max()))
@@ -529,20 +516,25 @@ class LinUCBHybrid(LinUCB):
         # Return without updating parameters (effectively do not append records to history)
         if logging_index_val is not None and optimal_arm_index != logging_index_val:
             return optimal_arm_index
-        
+
         # Observe reward
         r = reward(optimal_arm_index)
 
         # Update parameters for selected arm
-        parameters = self._arm_parameters[self._arm_parameters[self.arms_index] == optimal_arm_index]
-        assert len(parameters) == 1, f"More than one set of parameters found for Arm {optimal_arm_index}"
+        parameters = self._arm_parameters[
+            self._arm_parameters[self.arms_index] == optimal_arm_index
+        ]
+        assert (
+            len(parameters) == 1
+        ), f"More than one set of parameters found for Arm {optimal_arm_index}"
         for parameter in parameters:
-            parameter["A"] = (
-                parameter["A"]
-                + np.matmul(parameter["context"], np.transpose(parameter["context"]))
+            parameter["A"] = parameter["A"] + np.matmul(
+                parameter["context"], np.transpose(parameter["context"])
             )
-            parameter["b"] = parameter["b"] + r*parameter["context"]
-        self._arm_parameters[self._arm_parameters[self.arms_index] == optimal_arm_index] = parameters
+            parameter["b"] = parameter["b"] + r * parameter["context"]
+        self._arm_parameters[
+            self._arm_parameters[self.arms_index] == optimal_arm_index
+        ] = parameters
 
         # Update reward and selected arms
         self.selected_arms = np.append(self.selected_arms, optimal_arm_index)

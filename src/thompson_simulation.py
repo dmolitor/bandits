@@ -8,8 +8,10 @@ from tqdm import tqdm
 generator = np.random.default_rng(seed=123)
 base_dir = Path(__file__).resolve().parent.parent
 
+
 def which_max(a: np.ndarray):
     return np.equal(a, np.max(a))
+
 
 class BernoulliBanditTS:
     """A Bernoulli Bandit estimated via Thompson Sampling"""
@@ -28,11 +30,11 @@ class BernoulliBanditTS:
             self.probabilities.append([])
             self.regret.append([])
             self.rewards.append([])
-    
+
     def best_arm(self):
         return np.argmax(self.sample())
-    
-    def fit(self, warmup_n = 0, verbose = True):
+
+    def fit(self, warmup_n=0, verbose=True):
         if warmup_n > 0:
             if verbose:
                 print("Warmp-up phase ...")
@@ -48,8 +50,8 @@ class BernoulliBanditTS:
             n_remaining = range(self.n)
         for _ in n_remaining:
             self.pull()
-    
-    def pull(self, selected_arm = None):
+
+    def pull(self, selected_arm=None):
         """Sample from the bandit arm posteriors and 'pull' one of them"""
         if selected_arm is None:
             optimal_arm_estimates = self.sample()
@@ -78,7 +80,7 @@ class BernoulliBanditTS:
         regret = self.means[self.optimal_arm] - self.means[selected_arm]
         self.regret[selected_arm].append(regret)
         self.n -= 1
-    
+
     def sample(self):
         """
         Thompson sampling. Draw 1e3 draws from each arm's posterior
@@ -88,11 +90,12 @@ class BernoulliBanditTS:
         samples = np.random.beta(
             self.beta_params["a"],
             self.beta_params["b"],
-            size=(int(1e3), len(self.means))
+            size=(int(1e3), len(self.means)),
         )
         samples_max = samples == samples.max(axis=1, keepdims=True)
         samples_proportion = samples_max.mean(axis=0)
         return samples_proportion
+
 
 if __name__ == "__main__":
 
@@ -105,7 +108,7 @@ if __name__ == "__main__":
         "correct_arm_80": [],
         "min_opt_gap": [],
         "opt_mean": [],
-        "warmup": []
+        "warmup": [],
     }
 
     id = 0
@@ -120,12 +123,12 @@ if __name__ == "__main__":
                 id += 1
                 if id in results_dict["id"]:
                     continue
-                
+
                 def fit_sim(_):
                     bandit = BernoulliBanditTS(
-                        means=[best_mean] + [0.5]*15,
+                        means=[best_mean] + [0.5] * 15,
                         n=5000,
-                        beta_params={"a": [param_value]*16, "b": [param_value]*16}
+                        beta_params={"a": [param_value] * 16, "b": [param_value] * 16},
                     )
                     if warmup > 0:
                         bandit.fit(warmup_n=warmup, verbose=False)
@@ -158,7 +161,6 @@ if __name__ == "__main__":
     results = pd.DataFrame(results_dict)
     results["warmup_label"] = results["warmup"].apply(lambda x: f"Warmup N: {x}")
 
-
     ### Plot it!
     regret_plot = (
         pn.ggplot(
@@ -167,8 +169,8 @@ if __name__ == "__main__":
                 x="min_opt_gap",
                 y="expected_regret",
                 color="factor(param_value)",
-                group="param_value"
-            )
+                group="param_value",
+            ),
         )
         + pn.geom_line()
         + pn.facet_wrap("~ warmup_label", nrow=3, scales="free")
@@ -176,20 +178,20 @@ if __name__ == "__main__":
             x="Optimality gap",
             y="Mean expected regret",
             title="Bernoulli Bandit; k=16, n=5,000",
-            color="Beta"
+            color="Beta",
         )
         + pn.theme_538()
         + pn.theme(
             axis_title=pn.element_text(weight="bold"),
-            plot_title=pn.element_text(weight="bold", hjust=0.5)
+            plot_title=pn.element_text(weight="bold", hjust=0.5),
         )
     )
     pn.ggsave(
         regret_plot,
-        filename=base_dir/"figures"/"ts_expected_regret.png",
+        filename=base_dir / "figures" / "ts_expected_regret.png",
         width=8,
         height=6,
-        dpi=300
+        dpi=300,
     )
 
     correct_plot = (
@@ -199,8 +201,8 @@ if __name__ == "__main__":
                 x="min_opt_gap",
                 y="correct_arm",
                 color="factor(param_value)",
-                group="param_value"
-            )
+                group="param_value",
+            ),
         )
         + pn.geom_line()
         + pn.facet_wrap("~ warmup_label", nrow=3)
@@ -208,20 +210,20 @@ if __name__ == "__main__":
             x="Optimality gap",
             y="Fraction selecting correct arm",
             title="Bernoulli Bandit; k=16, n=5,000",
-            color="Beta"
+            color="Beta",
         )
         + pn.theme_538()
         + pn.theme(
             axis_title=pn.element_text(weight="bold"),
-            plot_title=pn.element_text(weight="bold", hjust=0.5)
+            plot_title=pn.element_text(weight="bold", hjust=0.5),
         )
     )
     pn.ggsave(
         correct_plot,
-        filename=base_dir/"figures"/"ts_correct_arm.png",
+        filename=base_dir / "figures" / "ts_correct_arm.png",
         width=8,
         height=6,
-        dpi=300
+        dpi=300,
     )
 
     correct_plot_80 = (
@@ -231,8 +233,8 @@ if __name__ == "__main__":
                 x="min_opt_gap",
                 y="correct_arm_80",
                 color="factor(param_value)",
-                group="param_value"
-            )
+                group="param_value",
+            ),
         )
         + pn.geom_line()
         + pn.facet_wrap("~ warmup_label", nrow=3)
@@ -240,20 +242,20 @@ if __name__ == "__main__":
             x="Optimality gap",
             y="Fraction selecting correct arm (80% cutoff)",
             title="Bernoulli Bandit; k=16, n=5,000",
-            color="Beta"
+            color="Beta",
         )
         + pn.theme_538()
         + pn.theme(
             axis_title=pn.element_text(weight="bold"),
-            plot_title=pn.element_text(weight="bold", hjust=0.5)
+            plot_title=pn.element_text(weight="bold", hjust=0.5),
         )
     )
     pn.ggsave(
         correct_plot_80,
-        filename=base_dir/"figures"/"ts_correct_arm_80.png",
+        filename=base_dir / "figures" / "ts_correct_arm_80.png",
         width=8,
         height=6,
-        dpi=300
+        dpi=300,
     )
 
-    results.to_csv(base_dir/"data"/"ts_results.csv", index=False)
+    results.to_csv(base_dir / "data" / "ts_results.csv", index=False)

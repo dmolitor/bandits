@@ -8,6 +8,7 @@ from tqdm import tqdm
 generator = np.random.default_rng(seed=123)
 base_dir = Path(__file__).resolve().parent.parent
 
+
 class BernoulliBandit:
     def __init__(self, means: List[float]):
         self.a_optimal = means.index(max(means))
@@ -18,10 +19,10 @@ class BernoulliBandit:
         self.n_rounds = 0
         self.a_sel: List[int] = []
         self.a_mean_rew: List[float] = []
-    
+
     def k(self):
         return len(self.means)
-    
+
     def pull(self, a: int):
         a_mean = self.means[a]
         [a_realization] = generator.binomial(n=1, p=a_mean, size=1)
@@ -30,7 +31,7 @@ class BernoulliBandit:
         self.a_sel.append(a)
         self.a_mean_rew.append(a_mean)
         return a_realization
-    
+
     def regret(self):
         regrets = []
         for sel_reward in self.a_mean_rew:
@@ -40,6 +41,7 @@ class BernoulliBandit:
         cumulative_regret = sum(regrets)
         return cumulative_regret
 
+
 def follow_the_leader(bandit: BernoulliBandit, n: int) -> None:
     # Initialize each arm by pulling once
     for t in range(bandit.k()):
@@ -48,12 +50,10 @@ def follow_the_leader(bandit: BernoulliBandit, n: int) -> None:
     for t in range(n):
         empirical_means = [np.mean(arm["realizations"]) for arm in bandit.arms]
         [arm_max_mean] = generator.choice(
-            np.where(
-                np.isclose(empirical_means, np.max(empirical_means))
-            )[0],
-            size=1
+            np.where(np.isclose(empirical_means, np.max(empirical_means)))[0], size=1
         )
         bandit.pull(arm_max_mean)
+
 
 # Sample code -------------------------------------------------------------
 
@@ -64,12 +64,12 @@ if __name__ == "__main__":
 
     pseudo_regret: List[float] = []
     for i in tqdm(range(1000), total=1000):
-        bandit = BernoulliBandit(means = [0.5, 0.6])
+        bandit = BernoulliBandit(means=[0.5, 0.6])
         follow_the_leader(bandit, n=100)
         pseudo_regret.append(bandit.regret())
 
     # Plot this pseudo regret
-    pseudo_regret_df = pd.DataFrame({"pseudo_regret":pseudo_regret})
+    pseudo_regret_df = pd.DataFrame({"pseudo_regret": pseudo_regret})
     pseudo_regret_plot = (
         pn.ggplot(pseudo_regret_df, pn.aes(x="pseudo_regret"))
         + pn.geom_histogram(bins=10, binwidth=1)
@@ -77,10 +77,10 @@ if __name__ == "__main__":
     )
     pn.ggsave(
         pseudo_regret_plot,
-        filename=base_dir/"figures"/"4_11.png",
+        filename=base_dir / "figures" / "4_11.png",
         width=8,
         height=6,
-        dpi=300
+        dpi=300,
     )
 
     # 2) Same Bernoulli bandit as in 1). Run 1000 simulations for horizon
@@ -91,7 +91,7 @@ if __name__ == "__main__":
         # Run 1000 simulations for the given horizon
         pseudo_regret: List[float] = []
         for i in tqdm(range(1000), total=1000):
-            bandit = BernoulliBandit(means = [0.5, 0.6])
+            bandit = BernoulliBandit(means=[0.5, 0.6])
             follow_the_leader(bandit, n=horizon)
             pseudo_regret.append(bandit.regret())
         # Calculate the regret mean, sd, and lower and upper bounds
@@ -107,8 +107,7 @@ if __name__ == "__main__":
     horizon_regret_df = pd.DataFrame(horizon_regret)
     horizon_plot = (
         pn.ggplot(
-            horizon_regret_df,
-            pn.aes(x="horizon", y="mean", ymin="lb", ymax="ub")
+            horizon_regret_df, pn.aes(x="horizon", y="mean", ymin="lb", ymax="ub")
         )
         + pn.geom_line()
         + pn.geom_errorbar(width=0.25)
@@ -116,8 +115,8 @@ if __name__ == "__main__":
     )
     pn.ggsave(
         horizon_plot,
-        filename=base_dir/"figures"/"4_12.png",
+        filename=base_dir / "figures" / "4_12.png",
         width=8,
         height=6,
-        dpi=300
+        dpi=300,
     )

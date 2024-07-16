@@ -12,7 +12,6 @@ def last(x: List):
 
 
 class Exp3EG:
-
     """
     This class implements the EXP3EG algorithm devised by Simchi-Levi and Wang:
     https://proceedings.mlr.press/v206/simchi-levi23a/simchi-levi23a.pdf.
@@ -34,7 +33,7 @@ class Exp3EG:
         alpha: float,
         reward: Callable[[int], float],
         delta: Optional[float] = None,
-        regret: Optional[Callable[[int], float]] = None
+        regret: Optional[Callable[[int], float]] = None,
     ):
 
         # Initialize parameters
@@ -48,9 +47,11 @@ class Exp3EG:
             raise ValueError("alpha must be ")
         self.alpha = alpha
         if delta is None:
-            delta = 1/((2 * n)**2)
+            delta = 1 / ((2 * n) ** 2)
         self.delta = delta
-        self.c = ((4 * (self.k**2) * (np.exp(2) + 1) + 2)**2) * (np.log(2/delta))**2
+        self.c = ((4 * (self.k**2) * (np.exp(2) + 1) + 2) ** 2) * (
+            np.log(2 / delta)
+        ) ** 2
 
         # Initialize lists for sequential values
         self.probabilities = []
@@ -64,10 +65,8 @@ class Exp3EG:
         self.epsilon_t = [0]
         self.alpha_t = []
         self.selected_arm = []
-    
-    
-    def fit(self, verbose: bool = True):
 
+    def fit(self, verbose: bool = True):
         """
         Fit the EXPE3EG algorithm over the given horizon.
         """
@@ -79,18 +78,16 @@ class Exp3EG:
         for _ in iter_seq:
             self.pull()
 
-
     def pull(self):
-
         """
         Perform exactly one iteration of the EXPE3EG algorithm.
         """
-        
+
         self.t += 1
 
         # Calculate hyper-parameters
-        epsilon_t = 1/np.sqrt(self.c * self.t)
-        alpha_t = 1/(self.k * (self.t**self.alpha))
+        epsilon_t = 1 / np.sqrt(self.c * self.t)
+        alpha_t = 1 / (self.k * (self.t**self.alpha))
 
         # Calculate arm selection probabilities
         eliminated = [last(x) for x in self.eliminated]
@@ -108,18 +105,17 @@ class Exp3EG:
                 probabilities.append(alpha_t)
                 self.probabilities[arm].append(alpha_t)
             else:
-                p = (
-                    (1 - a_t_comp_cardinality * alpha_t)
-                    * (
-                        np.exp(last(self.epsilon_t) * last(self.rewards_hat[arm]))
-                        / denominator
-                    )
+                p = (1 - a_t_comp_cardinality * alpha_t) * (
+                    np.exp(last(self.epsilon_t) * last(self.rewards_hat[arm]))
+                    / denominator
                 )
                 probabilities.append(p)
                 self.probabilities[arm].append(p)
 
         # Select arm to draw from
-        assert np.isclose(np.sum(probabilities), 1, atol=1e-6), f"Arm probabilities must sum to 1; {probabilities}"
+        assert np.isclose(
+            np.sum(probabilities), 1, atol=1e-6
+        ), f"Arm probabilities must sum to 1; {probabilities}"
         selected_arm = np.argmax(generator.multinomial(1, probabilities))
         self.selected_arm.append(selected_arm)
 
@@ -128,15 +124,15 @@ class Exp3EG:
         for arm in self.arms:
             if arm == selected_arm:
                 self.rewards_hat[arm].append(
-                    last(self.rewards_hat[arm]) + reward/probabilities[arm]
+                    last(self.rewards_hat[arm]) + reward / probabilities[arm]
                 )
             else:
                 self.rewards_hat[arm].append(last(self.rewards_hat[arm]))
-        
+
         # Calculate regret (if applicable)
         if self.regret is not None:
             self.regrets.append(self.regret(selected_arm))
-        
+
         # Update which (if any) arms are eliminated
         max_reward = np.max([last(x) for x in self.rewards_hat])
         for arm in self.arms:
@@ -168,29 +164,24 @@ if __name__ == "__main__":
     alpha_dict = {"regret": [], "ate": [], "alpha": []}
 
     for alpha in tqdm(range(0, 1001), total=1001):
-        alpha = alpha/1000
+        alpha = alpha / 1000
         e3eg = Exp3EG(
             k=2,
             n=int(1e4),
             alpha=alpha,
             reward=reward_bernoulli,
-            regret=regret_bernoulli
+            regret=regret_bernoulli,
         )
         e3eg.fit(verbose=False)
         alpha_dict["regret"].append(np.sum(e3eg.regrets))
         alpha_dict["ate"].append(
-            (last(e3eg.rewards_hat[0]) - last(e3eg.rewards_hat[1]))/e3eg.t
+            (last(e3eg.rewards_hat[0]) - last(e3eg.rewards_hat[1])) / e3eg.t
         )
         alpha_dict["alpha"].append(alpha)
 
     # Plot stuff
     alpha_df = pd.DataFrame(alpha_dict)
-    alpha_df = pd.melt(
-        alpha_df,
-        id_vars=["alpha"],
-        var_name="key",
-        value_name="value"
-    )
+    alpha_df = pd.melt(alpha_df, id_vars=["alpha"], var_name="key", value_name="value")
 
     (
         pn.ggplot(alpha_df, pn.aes(x="alpha", y="value"))
@@ -205,11 +196,7 @@ if __name__ == "__main__":
 
     for n in tqdm(range(1000, 100000, 1000), total=100):
         e3eg = Exp3EG(
-            k=2,
-            n=n,
-            alpha=0.5,
-            reward=reward_bernoulli,
-            regret=regret_bernoulli
+            k=2, n=n, alpha=0.5, reward=reward_bernoulli, regret=regret_bernoulli
         )
         e3eg.fit(verbose=False)
         n_dict["regret"].append(np.sum(e3eg.regrets))
